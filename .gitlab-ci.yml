@@ -10,10 +10,7 @@ variables:
   CODEDEPLOY_APP_NAME: "FrontendApp"
   CODEDEPLOY_DEPLOY_GROUP: "FrontendDeploymentGroup"
 
-before_script:
-  - apt-get update && apt-get install -y zip curl unzip
-  - node -v
-  - npm -v
+
 
 build:
   stage: build
@@ -41,10 +38,8 @@ deploy:
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
   script:
-    - echo "Kiểm tra artifact trước khi upload..."
     - if [ -z "$ARTIFACT_NAME" ] || [ ! -f "$ARTIFACT_NAME" ]; then echo "Artifact không tồn tại!" && exit 1; fi
     - echo "Uploading $ARTIFACT_NAME to S3..."
-    - ls -lah
     - aws s3 cp "$ARTIFACT_NAME" "s3://$S3_BUCKET/$ARTIFACT_NAME" || (echo "Upload thất bại!" && exit 1)
   only:
     - develop
@@ -62,11 +57,6 @@ codedeploy:
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
   script:
-    - echo "Deploying application via CodeDeploy..."
-    - echo "CODEDEPLOY_APP_NAME=$CODEDEPLOY_APP_NAME"
-    - echo "CODEDEPLOY_DEPLOY_GROUP=$CODEDEPLOY_DEPLOY_GROUP"
-    - echo "S3_BUCKET=$S3_BUCKET"
-    - echo "ARTIFACT_NAME=$ARTIFACT_NAME"
     - aws deploy create-deployment --application-name "$CODEDEPLOY_APP_NAME" --deployment-group-name "$CODEDEPLOY_DEPLOY_GROUP" --s3-location "bucket=$S3_BUCKET,key=$ARTIFACT_NAME,bundleType=zip" || (echo "Deployment thất bại!" && exit 1)
   only:
     - develop
