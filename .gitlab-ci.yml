@@ -1,7 +1,7 @@
 stages:
-  # - build
+  - build
   - deploy
-  # - codedeploy
+  - codedeploy
 
 variables:
   S3_BUCKET: "cicd-codedeploy-datnx"
@@ -10,23 +10,24 @@ variables:
   CODEDEPLOY_APP_NAME: "FrontendApp"
   CODEDEPLOY_DEPLOY_GROUP: "FrontendDeploymentGroup"
 
-# before_script:
-#   - apt-get update && apt-get install -y zip curl unzip
-#   - node -v
-#   - npm -v
+before_script:
+  - apt-get update && apt-get install -y zip curl unzip
+  - node -v
+  - npm -v
 
-# build:
-#   stage: build
-#   image: node:18
-#   script:
-#     - npm install
-#     - npm run build
-#     - zip -r $ARTIFACT_NAME build/ appspec.yml scripts/
-#   artifacts:
-#     paths:
-#       - $ARTIFACT_NAME
-#   only:
-#     - develop
+build:
+  stage: build
+  image: node:18
+  script:
+    - apt-get update && apt-get install -y zip 
+    - npm install
+    - npm run build
+    - zip -r $ARTIFACT_NAME build/ appspec.yml scripts/
+  artifacts:
+    paths:
+      - $ARTIFACT_NAME
+  only:
+    - develop
 
 deploy:
   stage: deploy
@@ -36,32 +37,34 @@ deploy:
     - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
     - unzip awscliv2.zip
     - ./aws/install
-    - /usr/local/bin/aws --version  # Kiểm tra cài đặt AWS CLI
     - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
   script:
     - echo "Kiểm tra artifact trước khi upload..."
-    # - if [ -z "$ARTIFACT_NAME" ] || [ ! -f "$ARTIFACT_NAME" ]; then echo "Artifact không tồn tại!" && exit 1; fi
-    # - echo "Uploading $ARTIFACT_NAME to S3..."
-    # - ls -lah
-    # - aws s3 cp "$ARTIFACT_NAME" "s3://$S3_BUCKET/$ARTIFACT_NAME" || (echo "Upload thất bại!" && exit 1)
+    - if [ -z "$ARTIFACT_NAME" ] || [ ! -f "$ARTIFACT_NAME" ]; then echo "Artifact không tồn tại!" && exit 1; fi
+    - echo "Uploading $ARTIFACT_NAME to S3..."
+    - ls -lah
+    - aws s3 cp "$ARTIFACT_NAME" "s3://$S3_BUCKET/$ARTIFACT_NAME" || (echo "Upload thất bại!" && exit 1)
   only:
     - develop
 
 
-# codedeploy:
-#   stage: codedeploy
-#   image: amazon/aws-cli
-#   before_script:
-#     - aws --version || (echo "AWS CLI không tồn tại, đang cài đặt..." && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install && aws --version)
-#     - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-#     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-#     - aws configure set region $AWS_REGION
-#   script:
-#     - echo "Deploying application via CodeDeploy..."
-#     - aws deploy create-deployment --application-name "$CODEDEPLOY_APP_NAME" \
-#       --deployment-group-name "$CODEDEPLOY_DEPLOY_GROUP" \
-#       --s3-location bucket="$S3_BUCKET",key="$ARTIFACT_NAME",bundleType=zip || (echo "Deployment thất bại!" && exit 1)
-#   only:
-#     - develop
+codedeploy:
+  stage: codedeploy
+  image: python:3.9
+  before_script:
+    - apt-get update && apt-get install -y unzip curl
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - unzip awscliv2.zip
+    - ./aws/install
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_REGION
+  script:
+    - echo "Deploying application via CodeDeploy..."
+    - aws deploy create-deployment --application-name "$CODEDEPLOY_APP_NAME" \
+      --deployment-group-name "$CODEDEPLOY_DEPLOY_GROUP" \
+      --s3-location bucket="$S3_BUCKET",key="$ARTIFACT_NAME",bundleType=zip || (echo "Deployment thất bại!" && exit 1)
+  only:
+    - develop
