@@ -63,9 +63,10 @@ codedeploy:
     - aws configure set region $AWS_REGION
   script:
     - echo "Deploying application via CodeDeploy..."
-    - aws deploy create-deployment \
-      --application-name "$CODEDEPLOY_APP_NAME" \
-      --deployment-group-name "$CODEDEPLOY_DEPLOY_GROUP" \
-      --s3-location "bucket=$S3_BUCKET,key=$ARTIFACT_NAME,bundleType=zip" || (echo "Deployment thất bại!" && exit 1)
+    - echo "CODEDEPLOY_APP_NAME=$CODEDEPLOY_APP_NAME"
+    - echo "CODEDEPLOY_DEPLOY_GROUP=$CODEDEPLOY_DEPLOY_GROUP"
+    - echo "S3_BUCKET=$S3_BUCKET"
+    - echo "ARTIFACT_NAME=$ARTIFACT_NAME"
+    - aws deploy create-deployment --application-name "$CODEDEPLOY_APP_NAME" --deployment-group-name "$CODEDEPLOY_DEPLOY_GROUP" --s3-location "bucket=$S3_BUCKET,key=$ARTIFACT_NAME,bundleType=zip" || (echo "Deployment thất bại!" && exit 1)
   only:
     - develop
