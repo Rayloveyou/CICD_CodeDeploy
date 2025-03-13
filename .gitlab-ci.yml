@@ -11,7 +11,7 @@ variables:
   CODEDEPLOY_DEPLOY_GROUP: "FrontendDeploymentGroup"
 
 before_script:
-  - apt-get update && apt-get install -y zip
+  - apt-get update && apt-get install -y zip curl unzip
   - node -v
   - npm -v
 
@@ -32,11 +32,14 @@ deploy:
   stage: deploy
   image: amazon/aws-cli
   before_script:
+    - aws --version || (echo "AWS CLI không tồn tại, đang cài đặt..." && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install && aws --version)
     - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
   script:
-    - aws s3 cp $ARTIFACT_NAME s3://$S3_BUCKET/$ARTIFACT_NAME
+    - echo "Uploading $ARTIFACT_NAME to S3..."
+    - ls -lah
+    - aws s3 cp $ARTIFACT_NAME s3://$S3_BUCKET/$ARTIFACT_NAME || (echo "Upload thất bại!" && exit 1)
   only:
     - develop
 
@@ -44,12 +47,14 @@ codedeploy:
   stage: codedeploy
   image: amazon/aws-cli
   before_script:
+    - aws --version || (echo "AWS CLI không tồn tại, đang cài đặt..." && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install && aws --version)
     - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
   script:
-    - aws deploy create-deployment --application-name $CODEDEPLOY_APP_NAME \
-      --deployment-group-name $CODEDEPLOY_DEPLOY_GROUP \
-      --s3-location bucket=$S3_BUCKET,key=$ARTIFACT_NAME,bundleType=zip
+    - echo "Deploying application via CodeDeploy..."
+    - aws deploy create-deployment --application-name "$CODEDEPLOY_APP_NAME" \
+      --deployment-group-name "$CODEDEPLOY_DEPLOY_GROUP" \
+      --s3-location bucket="$S3_BUCKET",key="$ARTIFACT_NAME",bundleType=zip || (echo "Deployment thất bại!" && exit 1)
   only:
     - develop
