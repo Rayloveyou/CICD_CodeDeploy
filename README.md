@@ -4,7 +4,8 @@
 2. Tạo role cho CodeDeploy
 ![image](https://github.com/user-attachments/assets/88470da5-be22-4e75-a551-9e0b36d10dd9)
 
-3.Tạo 1 user phục vụ CICD + gắn các role thao táo với S3, CodeDeploy 
+
+3. Tạo 1 user phục vụ CICD + gắn các role thao táo với S3, CodeDeploy 
 
 4. Launch Ec2 với IAM Role đã tạo + gắn SG + config user data cài đặt các config (tùy framework) + cài codedeploy agent 
 #!/bin/bash
@@ -31,7 +32,6 @@ systemctl start codedeploy-agent
 
 chmod +x /var/www/frontend/scripts/start.sh
 
-# Khởi động lại EC2 để áp dụng toàn bộ cấu hình
 reboot
 
 
