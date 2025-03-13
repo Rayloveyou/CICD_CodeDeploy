@@ -30,10 +30,13 @@ variables:
 
 deploy:
   stage: deploy
-  image: amazon/aws-cli
+  image: python:3.9
   before_script:
-   -  echo "biến:" $AWS_ACCESS_KEY_ID
-   -  echo "biến:" $AWS_SECRET_ACCESS_KEY
+    - apt-get update && apt-get install -y unzip curl
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - unzip awscliv2.zip
+    - ./aws/install
+    - /usr/local/bin/aws --version  # Kiểm tra cài đặt AWS CLI
     - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
