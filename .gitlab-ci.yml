@@ -1,0 +1,56 @@
+stages:
+  - build
+  - deploy
+  - codedeploy
+
+variables:
+  S3_BUCKET: "cicd-codedeploy-datnx"
+  AWS_REGION: "ap-southeast-1"
+  SHORT_COMMIT: "${CI_COMMIT_SHORT_SHA}"  
+  ARTIFACT_NAME: "frontend-${CI_COMMIT_BRANCH}_${SHORT_COMMIT}.zip"
+  CODEDEPLOY_APP_NAME: "FrontendApp"
+  CODEDEPLOY_DEPLOY_GROUP: "FrontendDeploymentGroup"
+
+before_script:
+  - apt-get update && apt-get install -y zip
+  - node -v
+  - npm -v
+
+build:
+  stage: build
+  image: node:18
+  script:
+    - npm install
+    - npm run build
+    - zip -r $ARTIFACT_NAME build/ appspec.yml scripts/
+  artifacts:
+    paths:
+      - $ARTIFACT_NAME
+  only:
+    - develop   # Chỉ chạy khi commit lên develop
+
+deploy:
+  stage: deploy
+  image: amazon/aws-cli
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_REGION
+  script:
+    - aws s3 cp $ARTIFACT_NAME s3://$S3_BUCKET/$ARTIFACT_NAME
+  only:
+    - develop   # Chỉ chạy khi commit lên develop
+
+codedeploy:
+  stage: codedeploy
+  image: amazon/aws-cli
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_REGION
+  script:
+    - aws deploy create-deployment --application-name $CODEDEPLOY_APP_NAME \
+      --deployment-group-name $CODEDEPLOY_DEPLOY_GROUP \
+      --s3-location bucket=$S3_BUCKET,key=$ARTIFACT_NAME,bundleType=zip
+  only:
+    - develop   # Chỉ chạy khi commit lên develop
