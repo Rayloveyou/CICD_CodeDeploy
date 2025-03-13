@@ -5,9 +5,8 @@ stages:
 
 variables:
   S3_BUCKET: "cicd-codedeploy-datnx"
-  AWS_REGION: "ap-southeast-1"
-  SHORT_COMMIT: "${CI_COMMIT_SHORT_SHA}"  
-  ARTIFACT_NAME: "frontend-${CI_COMMIT_BRANCH}_${SHORT_COMMIT}.zip"
+  AWS_REGION: "ap-south-1"
+  ARTIFACT_NAME: "frontend-${CI_COMMIT_BRANCH}_${CI_COMMIT_SHORT_SHA}.zip"
   CODEDEPLOY_APP_NAME: "FrontendApp"
   CODEDEPLOY_DEPLOY_GROUP: "FrontendDeploymentGroup"
 
@@ -27,7 +26,7 @@ build:
     paths:
       - $ARTIFACT_NAME
   only:
-    - develop   # Chỉ chạy khi commit lên develop
+    - develop
 
 deploy:
   stage: deploy
@@ -39,7 +38,7 @@ deploy:
   script:
     - aws s3 cp $ARTIFACT_NAME s3://$S3_BUCKET/$ARTIFACT_NAME
   only:
-    - develop   # Chỉ chạy khi commit lên develop
+    - develop
 
 codedeploy:
   stage: codedeploy
@@ -53,4 +52,4 @@ codedeploy:
       --deployment-group-name $CODEDEPLOY_DEPLOY_GROUP \
       --s3-location bucket=$S3_BUCKET,key=$ARTIFACT_NAME,bundleType=zip
   only:
-    - develop   # Chỉ chạy khi commit lên develop
+    - develop
